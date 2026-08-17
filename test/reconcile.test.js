@@ -131,6 +131,37 @@ test("reconcile: diverged local keeps its un-pushed commits (no destructive rese
   await fs.rm(originDir, { recursive: true, force: true });
 });
 
+test("reconcile: existing activity.log history is preserved on a fresh daily run", async () => {
+  const originDir = await tempDir("gogreen-recon-hist-");
+  await initRepo(originDir);
+  const history = [
+    "2024-01-01T10:00:00+00:00 - first commit",
+    "2024-01-02T10:00:00+00:00 - second commit",
+    "2024-01-03T10:00:00+00:00 - third commit",
+  ];
+  await commitFile(originDir, "activity.log", history.join("\n"), "origin history");
+
+  const workDir = await tempDir("gogreen-recon-hist-work-");
+  await fs.rm(workDir, { recursive: true, force: true });
+
+  await applyPlan({
+    plan: { entries, appliedCount: 0, totalCommits: 2, activeDays: 1, restDays: 0 },
+    profile,
+    remoteUrl: "file://" + originDir,
+    workDir,
+    planPath: path.join(workDir, "plan.json"),
+    pushImpl: async () => {},
+  });
+
+  const log = await fs.readFile(path.join(workDir, "activity.log"), "utf8");
+  const lines = log.trim().split("\n");
+  assert.equal(lines.length, 5, "3 historical + 2 new lines");
+  assert.deepEqual(lines.slice(0, 3), history);
+  assert.equal(await commitCount(workDir), 3, "1 origin + 2 applied commits");
+  await fs.rm(workDir, { recursive: true, force: true });
+  await fs.rm(originDir, { recursive: true, force: true });
+});
+
 test("reconcile: unreachable origin is ignored gracefully", async () => {
   const workDir = await tempDir("gogreen-recon-offline-");
 

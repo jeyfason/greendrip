@@ -129,3 +129,20 @@ test("generateDailyPlan default now is the current date", () => {
     assert.strictEqual(e.date.slice(0, 10), moment().startOf("day").format("YYYY-MM-DD"));
   }
 });
+
+test("generateDailyPlan weekend rest rate matches WEEKEND_REST", () => {
+  const now = new Date("2026-08-22T12:00:00Z"); // Saturday
+  let restDays = 0;
+  for (let seed = 0; seed < 500; seed++) {
+    if (generateDailyPlan({ now, seed }).restDay) restDays++;
+  }
+  const rate = restDays / 500;
+  assert.ok(Math.abs(rate - 0.45) < 0.06, `weekend rest rate ${rate} within tolerance of 0.45`);
+});
+
+test("generateDailyPlan seed 0 is deterministic", () => {
+  const now = new Date("2026-08-17T12:00:00Z");
+  const a = generateDailyPlan({ now, seed: 0 });
+  const b = generateDailyPlan({ now, seed: 0 });
+  assert.deepEqual(a, b);
+});
