@@ -16,6 +16,11 @@ goGreen is a Node.js CLI that fills your GitHub contribution graph with **realis
   - No future dates, ever
 - **Private `daily-log` repo** — all backdated commits are pushed to a private repo on your account, so only you see them (enable "Include private contributions" in your profile settings).
 - **Resumable plans** — interrupted runs pick up exactly where they left off via `plan.json`.
+{
+  "username": "",
+  "token": ""
+}
+
 - **Daily Drip (GitHub Action)** — keeps your graph alive from now on: a workflow runs every day at 15:30 UTC and pushes 1–8 same-day commits (or takes a rest day), with randomized hours. Fully automatic — set the secret once and forget it.
 
 ## 🚀 Getting Started
