@@ -13,6 +13,7 @@ const rl = readline.createInterface({ input: stdin, output: stdout });
 
 const lineBuffer = [];
 let lineWaiter = null;
+let closed = false;
 
 rl.on("line", (line) => {
   if (lineWaiter) {
@@ -25,6 +26,7 @@ rl.on("line", (line) => {
 });
 
 rl.on("close", () => {
+  closed = true;
   if (lineWaiter) {
     const resolve = lineWaiter;
     lineWaiter = null;
@@ -34,6 +36,7 @@ rl.on("close", () => {
 
 function nextLine() {
   if (lineBuffer.length > 0) return Promise.resolve(lineBuffer.shift());
+  if (closed) return Promise.resolve(null);
   return new Promise((resolve) => {
     lineWaiter = resolve;
   });
