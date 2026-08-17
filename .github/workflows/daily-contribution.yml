@@ -1,0 +1,25 @@
+name: daily-contribution
+
+on:
+  schedule:
+    - cron: "30 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --omit=dev
+      - name: Push today's contributions
+        run: node daily.js
+        env:
+          GOGREEN_TOKEN: ${{ secrets.GOGREEN_TOKEN }}
+          GOGREEN_USERNAME: jeyfason
+          GOGREEN_REPO: daily-log
