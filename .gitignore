@@ -137,3 +137,6 @@ dist
 .gogreen.json
 plan.json
 .gogreen-work/
+
+# goGreen daily runtime dir
+.daily-work/
