@@ -1,5 +1,5 @@
 import jsonfile from "jsonfile";
-import readline from "node:readline/promises";
+import readline from "node:readline";
 import { stdin, stdout } from "node:process";
 import { loadConfig, saveConfig } from "./lib/config.js";
 import { createGithub } from "./lib/github.js";
@@ -11,9 +11,40 @@ const PREVIEW_ONLY = process.argv.includes("--preview");
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
 
+const lineBuffer = [];
+let lineWaiter = null;
+
+rl.on("line", (line) => {
+  if (lineWaiter) {
+    const resolve = lineWaiter;
+    lineWaiter = null;
+    resolve(line);
+  } else {
+    lineBuffer.push(line);
+  }
+});
+
+rl.on("close", () => {
+  if (lineWaiter) {
+    const resolve = lineWaiter;
+    lineWaiter = null;
+    resolve(null);
+  }
+});
+
+function nextLine() {
+  if (lineBuffer.length > 0) return Promise.resolve(lineBuffer.shift());
+  return new Promise((resolve) => {
+    lineWaiter = resolve;
+  });
+}
+
 async function ask(question, validate = () => true) {
   while (true) {
-    const answer = (await rl.question(question)).trim();
+    process.stdout.write(question);
+    const line = await nextLine();
+    if (line === null) throw new Error("Input closed");
+    const answer = line.trim();
     if (validate(answer)) return answer;
     console.log("  Invalid input, try again.");
   }
