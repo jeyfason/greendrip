@@ -65,6 +65,15 @@ async function withRetry(fn, attempts = 3) {
   }
 }
 
+async function loadPlan() {
+  try {
+    const plan = await jsonfile.readFile("plan.json");
+    return plan && Array.isArray(plan.entries) ? plan : null;
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   let config = await loadConfig();
   if (!config) {
@@ -79,21 +88,35 @@ async function main() {
   const profile = await github.getUser();
   console.log(`Account: ${profile.name} <${profile.email}> — joined GitHub in ${profile.creationYear}\n`);
 
-  const currentYear = new Date().getFullYear();
-  const defaultYear = profile.creationYear;
-  const startYear = Number(
-    await ask(
-      `Pick a start year (${profile.creationYear}-${currentYear}) [${defaultYear}]: `,
-      (v) => {
-        if (v === "") return true;
-        const n = Number(v);
-        return Number.isInteger(n) && n >= profile.creationYear && n <= currentYear;
-      }
-    ) || defaultYear
-  );
+  const existingPlan = await loadPlan();
+  let plan = null;
+  const inProgress = existingPlan && (existingPlan.appliedCount ?? 0) > 0 && existingPlan.appliedCount < existingPlan.entries.length;
+  if (inProgress) {
+    const resume = (await ask(`Existing plan found (${existingPlan.appliedCount} of ${existingPlan.entries.length} commits applied). Resume it? (Y/n): `)).toLowerCase();
+    if (["", "y", "yes"].includes(resume)) {
+      plan = existingPlan;
+    } else {
+      console.log("Note: previously committed entries remain in the repo; a fresh plan will add commits on top of them.");
+    }
+  }
 
-  const plan = generatePlan({ startYear });
-  await jsonfile.writeFile("plan.json", plan, { spaces: 2 });
+  if (!plan) {
+    const currentYear = new Date().getFullYear();
+    const defaultYear = profile.creationYear;
+    const startYear = Number(
+      await ask(
+        `Pick a start year (${profile.creationYear}-${currentYear}) [${defaultYear}]: `,
+        (v) => {
+          if (v === "") return true;
+          const n = Number(v);
+          return Number.isInteger(n) && n >= profile.creationYear && n <= currentYear;
+        }
+      ) || defaultYear
+    );
+
+    plan = generatePlan({ startYear });
+    await jsonfile.writeFile("plan.json", plan, { spaces: 2 });
+  }
 
   if (plan.totalCommits === 0) {
     console.log("The plan has no commits (all days fell on rest days). Run again for a new plan.");
@@ -101,7 +124,7 @@ async function main() {
     return;
   }
 
-  console.log(`\nPlan: ${plan.totalCommits} commits across ${plan.activeDays} active days, ${plan.restDays} rest days (${startYear} → today).`);
+  console.log(`\nPlan: ${plan.totalCommits} commits across ${plan.activeDays} active days, ${plan.restDays} rest days (${plan.startYear} → today).`);
   console.log("Sample week:");
   for (const entry of plan.entries.slice(0, 7)) {
     console.log(`  ${entry.date}  ${entry.message}`);
