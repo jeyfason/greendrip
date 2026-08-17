@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import moment from "moment";
-import { generatePlan } from "../lib/planner.js";
+import { generatePlan, generateDailyPlan } from "../lib/planner.js";
 
 const plan = generatePlan({ startYear: 2024, seed: "test-seed" });
 
@@ -64,5 +64,68 @@ test("different seeds produce different plans", () => {
 test("plan only contains entries from the start year onward", () => {
   for (const entry of plan.entries) {
     assert.ok(entry.date.slice(0, 4) >= "2024", `before start year: ${entry.date}`);
+  }
+});
+
+function dayKey(iso) {
+  return iso.slice(0, 10);
+}
+
+test("generateDailyPlan is deterministic with a seed", () => {
+  const now = new Date("2026-08-17T12:00:00Z");
+  const a = generateDailyPlan({ now, seed: "seed-1" });
+  const b = generateDailyPlan({ now, seed: "seed-1" });
+  assert.deepEqual(a, b);
+});
+
+test("generateDailyPlan entries are on today, valid ISO, never in the future", () => {
+  const now = new Date("2026-08-17T12:00:00Z");
+  for (let seed = 0; seed < 200; seed++) {
+    const { entries } = generateDailyPlan({ now, seed });
+    for (const e of entries) {
+      assert.strictEqual(e.date.slice(0, 10), moment(now).startOf("day").format("YYYY-MM-DD"));
+      assert.ok(!Number.isNaN(Date.parse(e.date)), "valid ISO date");
+      assert.ok(new Date(e.date) <= now, "no future timestamps");
+      assert.ok(e.message.length > 0, "message non-empty");
+    }
+  }
+});
+
+test("generateDailyPlan produces rest days and active days across seeds", () => {
+  const now = new Date("2026-08-17T12:00:00Z");
+  let restDays = 0;
+  let activeDays = 0;
+  const sizes = new Set();
+  for (let seed = 0; seed < 500; seed++) {
+    const { entries, restDay } = generateDailyPlan({ now, seed });
+    assert.strictEqual(restDay, entries.length === 0);
+    if (restDay) restDays++;
+    else {
+      activeDays++;
+      assert.ok(entries.length >= 1 && entries.length <= 8, "1-8 commits on active days");
+      sizes.add(entries.length);
+    }
+  }
+  const restRate = restDays / 500;
+  assert.ok(Math.abs(restRate - 0.12) < 0.05, `rest rate ${restRate} within tolerance of 0.12`);
+  assert.ok(activeDays > 0 && restDays > 0, "both outcomes occur");
+  assert.ok(sizes.size >= 3, `varied intensities observed: ${[...sizes].sort((a, b) => a - b)}`);
+});
+
+test("generateDailyPlan entries are sorted ascending by time", () => {
+  const now = new Date("2026-08-17T23:00:00Z");
+  for (let seed = 0; seed < 50; seed++) {
+    const { entries } = generateDailyPlan({ now, seed });
+    const times = entries.map((e) => Date.parse(e.date));
+    for (let i = 1; i < times.length; i++) {
+      assert.ok(times[i] >= times[i - 1], "sorted ascending");
+    }
+  }
+});
+
+test("generateDailyPlan default now is the current date", () => {
+  const { entries } = generateDailyPlan({ seed: 7 });
+  for (const e of entries) {
+    assert.strictEqual(e.date.slice(0, 10), moment().startOf("day").format("YYYY-MM-DD"));
   }
 });
