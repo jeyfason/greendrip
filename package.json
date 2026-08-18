@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jeyfason/goGreen.git"
+    "url": "git+https://github.com/jeyfason/greendrip.git"
   },
   "dependencies": {
     "jsonfile": "^6.1.0",

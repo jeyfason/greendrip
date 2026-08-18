@@ -67,7 +67,7 @@ Commits today's activity immediately (requires `GOGREEN_TOKEN` / `GOGREEN_USERNA
 For the fully automatic version, clone this repo (or your fork) and add the token as a repository secret:
 
 ```bash
-git clone https://github.com/jeyfason/goGreen.git
+git clone https://github.com/jeyfason/greendrip.git
 ```
 
 On the repo's **Settings → Secrets and variables → Actions** page, add the token as a repository secret — name it `GOGREEN_TOKEN`.
