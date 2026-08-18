@@ -1,40 +1,41 @@
-# 🌱 goGreen
+# 🌱 greendrip
 
 > **Created by [Jey Fason](https://github.com/jeyfason)**
 
-With **goGreen**, you can make your profile look like you've been hard at work... even if you haven't.
+Make your GitHub contribution graph look like you've been hard at work... even if you haven't.
 
-goGreen is a Node.js CLI that fills your GitHub contribution graph with **realistic-looking commits** — rest days, varied intensity, natural commit times and messages — so the result looks like a real, passionate developer's history, not a bot's spray.
+greendrip is a Node.js CLI that fills your GitHub contribution graph with **realistic-looking commits** — rest days, varied intensity, natural commit times and messages — so the result looks like a real developer's history, not a bot's spray. Install once, backfill your timeline, then let the Daily Drip keep it green from now on.
 
 ## ✨ Features
 
-- **Realistic backfill (`npm start`)** — connects to your GitHub account, detects your account's creation year, and generates a natural commit timeline from any start year up to today:
+- **Realistic backfill** — connects to your GitHub account, detects your account's creation year, and generates a natural commit timeline from any start year up to today:
   - ~22% rest days (mostly weekends, some random weekdays)
   - Intensity: 68% of active days get 1–2 commits, 22% get 3–4, 10% get 5–8
   - Commit times drawn from realistic windows (morning, afternoon, evening, occasional late night)
   - Varied, natural commit messages — no exact repeats within a plan
   - No future dates, ever
+- **Daily Drip** — keeps your graph alive from now on: the GitHub Action runs every day at 15:30 UTC and pushes 1–8 same-day commits (or takes a rest day), with randomized hours. Fully automatic — set the secret once and forget it.
 - **Private `daily-log` repo** — all backdated commits are pushed to a private repo on your account, so only you see them (enable "Include private contributions" in your profile settings).
 - **Resumable plans** — interrupted runs pick up exactly where they left off via `plan.json`.
-{
-  "username": "",
-  "token": ""
-}
 
-- **Daily Drip (GitHub Action)** — keeps your graph alive from now on: a workflow runs every day at 15:30 UTC and pushes 1–8 same-day commits (or takes a rest day), with randomized hours. Fully automatic — set the secret once and forget it.
-
-## 🚀 Getting Started
+## 🚀 Install
 
 ```bash
-git clone https://github.com/jeyfason/goGreen.git
-cd goGreen
-npm install
+npm install -g greendrip
 ```
 
-### 1. Backfill your timeline
+Or run without installing:
 
 ```bash
-npm start
+npx greendrip
+```
+
+## 📖 Usage
+
+### Backfill your timeline
+
+```bash
+greendrip
 ```
 
 Follow the prompts:
@@ -45,27 +46,48 @@ Follow the prompts:
 
 The tool creates the private `daily-log` repo, commits the whole timeline with backdated dates, and pushes once at the end.
 
-Use `npm run preview` to generate and preview a plan without applying.
-
-### 2. Keep it green with the Daily Drip
+### Preview without applying
 
 ```bash
-npm run today        # commit today's activity manually
+greendrip --preview
 ```
 
-For the fully automatic version:
+Generates the plan, prints a sample, and keeps it in `plan.json` — nothing is pushed.
 
-1. Add your token as a repository secret on the repo's **Settings → Secrets and variables → Actions** page — name it `GOGREEN_TOKEN`.
-2. The `daily-contribution` workflow then runs daily at 15:30 UTC. You can also trigger it manually anytime from the **Actions** tab.
+### Daily Drip (one-shot, manual)
+
+```bash
+greendrip --daily
+```
+
+Commits today's activity immediately (requires `GOGREEN_TOKEN` / `GOGREEN_USERNAME` env vars, or `.gogreen.json` from a backfill run).
+
+## ⏰ Daily Drip setup (GitHub Action)
+
+For the fully automatic version, clone this repo (or your fork) and add the token as a repository secret:
+
+```bash
+git clone https://github.com/jeyfason/goGreen.git
+```
+
+On the repo's **Settings → Secrets and variables → Actions** page, add the token as a repository secret — name it `GOGREEN_TOKEN`.
+
+The `daily-contribution` workflow (`.github/workflows/daily-contribution.yml`) then runs daily at **15:30 UTC** via cron, and can be triggered manually anytime from the **Actions** tab. It runs `node index.js --daily` with your token passed via `env`.
+
+```yaml
+# What the workflow does
+- run: node index.js --daily
+  env:
+    GOGREEN_TOKEN: ${{ secrets.GOGREEN_TOKEN }}
+    GOGREEN_USERNAME: <your username>
+    GOGREEN_REPO: daily-log
+```
 
 That's it — the graph stays alive on its own.
 
 ## ⚙️ How it works
 
-- `lib/planner.js` — the realism engine: generates plans (backfill + single-day) from seeded randomness.
-- `lib/applier.js` — commits each entry with `git commit --date=...` into the work repo (`.gogreen-work/` for backfill, `.daily-work/` for daily runs) and pushes once at the end.
-- `lib/github.js` — GitHub API wrapper (account lookup, private repo creation).
-- `.github/workflows/daily-contribution.yml` — the Daily Drip cron.
+A realism engine (`lib/planner.js`) generates the plan; an applier (`lib/applier.js`) writes backdated commits into a private work repo and pushes once; a GitHub client (`lib/github.js`) handles account lookup and repo creation; a daily orchestrator (`lib/daily.js`) runs the Drip. See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full module map, data flow, realism constants, resume/reconcile semantics, and security notes.
 
 ## 🧪 Tests
 
