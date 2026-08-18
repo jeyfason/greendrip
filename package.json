@@ -10,7 +10,7 @@
   "files": [
     "index.js",
     "lib/",
-    "docs/",
+    "docs/ARCHITECTURE.md",
     "README.md",
     "LICENSE"
   ],

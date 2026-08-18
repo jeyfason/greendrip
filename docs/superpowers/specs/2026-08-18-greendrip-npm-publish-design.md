@@ -33,7 +33,7 @@ Publish the tool to npm as **`greendrip`**:
 - `description`: one-liner (realistic GitHub contribution backfill + daily drip)
 - `keywords`: `["github", "contribution-graph", "git", "cli", "backfill", "green", "commits"]`
 - `bin`: `{ "greendrip": "./index.js" }`
-- `files`: `["index.js", "lib/", "docs/", "README.md", "LICENSE"]`
+- `files`: `["index.js", "lib/", "docs/ARCHITECTURE.md", "README.md", "LICENSE"]`
 - `prepublishOnly`: `"npm test"`
 - `main`: `"index.js"` (kept; harmless)
 - `repository`: `https://github.com/jeyfason/goGreen` (updated to `greendrip` repo name if renamed)
@@ -56,7 +56,7 @@ Publish the tool to npm as **`greendrip`**:
 ### 4. Publish flow
 
 1. `npm test` — 38 tests pass.
-2. `npm pack --dry-run` — tarball must contain exactly: `index.js`, `lib/` (4 files), `docs/`, `README.md`, `LICENSE`, `package.json`. Must NOT contain: `.gogreen.json`, `plan.json`, `.gogreen-work/`, `.daily-work/`, `test/`, `node_modules/`, workflow files.
+2. `npm pack --dry-run` — tarball must contain exactly: `index.js`, `lib/` (4 files), `docs/ARCHITECTURE.md`, `README.md`, `LICENSE`, `package.json`. Must NOT contain: `.gogreen.json`, `plan.json`, `.gogreen-work/`, `.daily-work/`, `test/`, `node_modules/`, workflow files.
 3. User runs `npm login` (one-time).
 4. `npm publish` — gated by `prepublishOnly` test run.
 
