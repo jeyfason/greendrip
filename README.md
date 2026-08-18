@@ -64,24 +64,37 @@ Commits today's activity immediately (requires `GOGREEN_TOKEN` / `GOGREEN_USERNA
 
 ## ⏰ Daily Drip setup (GitHub Action)
 
-For the fully automatic version, clone this repo (or your fork) and add the token as a repository secret:
-
-```bash
-git clone https://github.com/jeyfason/greendrip.git
-```
-
-On the repo's **Settings → Secrets and variables → Actions** page, add the token as a repository secret — name it `GOGREEN_TOKEN`.
-
-The `daily-contribution` workflow (`.github/workflows/daily-contribution.yml`) then runs daily at **15:30 UTC** via cron, and can be triggered manually anytime from the **Actions** tab. It runs `node index.js --daily` with your token passed via `env`.
+For the fully automatic version, create a **private** automation repo (separate from this one — the token stays out of any public repo) and add this workflow:
 
 ```yaml
-# What the workflow does
-- run: node index.js --daily
-  env:
-    GOGREEN_TOKEN: ${{ secrets.GOGREEN_TOKEN }}
-    GOGREEN_USERNAME: <your username>
-    GOGREEN_REPO: daily-log
+name: daily-contribution
+
+on:
+  schedule:
+    - cron: "30 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Push today's contributions
+        run: npx --yes greendrip --daily
+        env:
+          GOGREEN_TOKEN: ${{ secrets.GOGREEN_TOKEN }}
+          GOGREEN_USERNAME: <your username>
+          GOGREEN_REPO: daily-log
 ```
+
+On that repo's **Settings → Secrets and variables → Actions** page, add the token as a repository secret — name it `GOGREEN_TOKEN`.
+
+The workflow then runs daily at **15:30 UTC** via cron, and can be triggered manually anytime from the **Actions** tab. It runs the published package (`npx greendrip --daily`), so it always uses the latest release.
 
 That's it — the graph stays alive on its own.
 
@@ -104,4 +117,3 @@ Backdated commits are against [GitHub's Terms of Service](https://docs.github.co
 ## Credits
 
 - Built by [Jey Fason](https://github.com/jeyfason)
-- Original concept inspired by [Akshay Saini](https://github.com/akshaymarch7)

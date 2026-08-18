@@ -233,7 +233,7 @@ Structure:
 5. How it works — link to `docs/ARCHITECTURE.md`.
 6. Tests: `npm test` (38).
 7. ToS note (backdated commits, keep repo private).
-8. Credits: Jey Fason; original concept inspired by Akshay Saini.
+8. Credits: Jey Fason.
 
 - [ ] **Step 3: Verify**
 

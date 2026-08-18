@@ -113,7 +113,7 @@ In `applyPlan` (lib/applier.js), before any commit:
 ## Security
 
 - Credentials live only in `.gogreen.json` — gitignored (never committed) and excluded from the published tarball by the `files` whitelist in `package.json` (`index.js`, `lib/`, `docs/ARCHITECTURE.md`, `README.md`, `LICENSE`).
-- CI mode uses the `GOGREEN_TOKEN` repo secret (plus `GOGREEN_USERNAME` / `GOGREEN_REPO` env vars), per `.github/workflows/daily-contribution.yml`.
+- CI mode uses the `GOGREEN_TOKEN` repo secret (plus `GOGREEN_USERNAME` / `GOGREEN_REPO` env vars). It runs from a **private** automation repo (e.g. `greendrip-cron`) so the token secret never lives on a public repo; the workflow runs the published package via `npx --yes greendrip --daily`.
 - The remote URL embeds the token as `https://x-access-token:<token>@github.com/<user>/daily-log.git` (`remoteUrl` in lib/github.js) — one of the reasons pushes only ever target the private `daily-log` repo.
-- The workflow runs `node index.js --daily` with `contents: read` permissions and the token passed via `env` only.
+- The workflow runs with `contents: read` permissions and the token passed via `env` only.
 - Verification step before publishing: `npm pack --dry-run` and a scan for stray credentials; `prepublishOnly` runs `npm test`.
