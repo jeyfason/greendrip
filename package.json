@@ -1,18 +1,41 @@
 {
-  "name": "thomyorke",
+  "name": "greendrip",
   "version": "1.0.0",
-  "description": "nice dream",
-  "main": "index.js",
+  "description": "Fill your GitHub contribution graph with realistic commits and keep it green with a daily drip",
   "type": "module",
+  "main": "index.js",
+  "bin": {
+    "greendrip": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "lib/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --test",
+    "prepublishOnly": "npm test",
     "start": "node index.js",
     "preview": "node index.js --preview",
-    "today": "node daily.js"
+    "today": "node index.js --daily"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "github",
+    "contribution-graph",
+    "git",
+    "cli",
+    "backfill",
+    "commits",
+    "green"
+  ],
+  "author": "Jey Fason",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeyfason/goGreen.git"
+  },
   "dependencies": {
     "jsonfile": "^6.1.0",
     "moment": "^2.30.1",

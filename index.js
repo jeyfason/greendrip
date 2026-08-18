@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import jsonfile from "jsonfile";
 import readline from "node:readline";
 import { stdin, stdout } from "node:process";
