@@ -18,7 +18,7 @@ jobs:
           node-version: 20
       - run: npm install --omit=dev
       - name: Push today's contributions
-        run: node daily.js
+        run: node index.js --daily
         env:
           GOGREEN_TOKEN: ${{ secrets.GOGREEN_TOKEN }}
           GOGREEN_USERNAME: jeyfason
