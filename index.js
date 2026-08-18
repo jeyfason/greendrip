@@ -2,15 +2,19 @@
 import jsonfile from "jsonfile";
 import readline from "node:readline";
 import { stdin, stdout } from "node:process";
-import { loadConfig, saveConfig } from "./lib/config.js";
+import { createRequire } from "node:module";
+import { loadConfig, saveConfig, resetConfig, acquireCredentials } from "./lib/config.js";
+import { parseFlags, USAGE } from "./lib/cli.js";
 import { runDaily } from "./lib/daily.js";
 import { createGithub } from "./lib/github.js";
 import { generatePlan } from "./lib/planner.js";
 import { applyPlan } from "./lib/applier.js";
 
+const require = createRequire(import.meta.url);
+const pkg = require("./package.json");
+
 const REPO_NAME = "daily-log";
-const PREVIEW_ONLY = process.argv.includes("--preview");
-const DAILY_ONLY = process.argv.includes("--daily");
+const flags = parseFlags(process.argv.slice(2));
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
 
@@ -78,17 +82,46 @@ async function loadPlan() {
 }
 
 async function main() {
-  if (DAILY_ONLY) {
+  if (flags.help) {
+    console.log(USAGE);
+    rl.close();
+    return;
+  }
+  if (flags.version) {
+    console.log(pkg.version);
+    rl.close();
+    return;
+  }
+  if (flags.reset) {
+    if (await resetConfig()) {
+      console.log("Removed saved credentials (.gogreen.json).");
+    } else {
+      console.log("No saved credentials found.");
+    }
+    console.log("Run `npx greendrip` to set them up again.");
+    rl.close();
+    return;
+  }
+
+  if (flags.daily) {
     let { GOGREEN_TOKEN: token, GOGREEN_USERNAME: username, GOGREEN_REPO: repo } = process.env;
     if (!token || !username) {
       const config = await loadConfig();
       if (!config?.token || !config?.username) {
-        throw new Error("Set GOGREEN_TOKEN and GOGREEN_USERNAME env vars (or run `npm start` once to save credentials).");
+        throw new Error("Set GOGREEN_TOKEN and GOGREEN_USERNAME env vars (or run `npx greendrip` once to save credentials).");
       }
       token = config.token;
       username = config.username;
     }
-    const result = await runDaily({ token, username, repo });
+    let result;
+    try {
+      result = await runDaily({ token, username, repo });
+    } catch (err) {
+      if (/401/.test(err.message)) {
+        throw new Error(`The token was rejected (401). Set valid GOGREEN_TOKEN / GOGREEN_USERNAME env vars, or run \`npx greendrip --reset\` and re-enter credentials.`);
+      }
+      throw err;
+    }
     if (result.restDay) {
       console.log(`Rest day — no commits. (${new Date().toISOString().slice(0, 10)})`);
     } else {
@@ -99,16 +132,25 @@ async function main() {
   }
 
   let config = await loadConfig();
-  if (!config) {
-    const username = await ask("GitHub username: ", (v) => v.length > 0);
-    const token = await ask("Personal access token (repo scope): ", (v) => v.length > 0);
-    config = { username, token };
-    await saveConfig(config);
-    console.log("Saved credentials to .gogreen.json (gitignored).\n");
-  }
+  const hadConfig = !!config;
+  config = await acquireCredentials({
+    config,
+    ask: (q) => ask(q, (v) => v.length > 0),
+    verify: (c) => createGithub(c).getUser(),
+    save: saveConfig,
+  });
+  if (!hadConfig) console.log("Saved credentials to .gogreen.json (gitignored).\n");
 
   const github = createGithub(config);
-  const profile = await github.getUser();
+  let profile;
+  try {
+    profile = await github.getUser();
+  } catch (err) {
+    if (/401/.test(err.message)) {
+      throw new Error(`Saved credentials in .gogreen.json were rejected (401). Reconfigure with: npx greendrip --reset`);
+    }
+    throw err;
+  }
   console.log(`Account: ${profile.name} <${profile.email}> — joined GitHub in ${profile.creationYear}\n`);
 
   const existingPlan = await loadPlan();
@@ -154,7 +196,7 @@ async function main() {
   }
   console.log("  ...");
 
-  if (PREVIEW_ONLY) {
+  if (flags.preview) {
     console.log("\nPreview only — run without --preview to apply. Plan kept in plan.json.");
     rl.close();
     return;

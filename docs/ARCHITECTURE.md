@@ -9,7 +9,8 @@ under `docs/superpowers/`.
 | File | Responsibility |
 | --- | --- |
 | `index.js` | CLI entry point (bin `greendrip`). Dispatches on flags, drives the interactive backfill prompt loop, wires everything together. |
-| `lib/config.js` | `loadConfig` / `saveConfig` — reads and writes `.gogreen.json` (username + token) via `jsonfile`. |
+| `lib/config.js` | `loadConfig` / `saveConfig` / `resetConfig` / `acquireCredentials` — reads, writes and clears `.gogreen.json` (username + token); new credentials are verified against the GitHub API **before** being saved, and rejected tokens are never persisted. |
+| `lib/cli.js` | `parseFlags` / `USAGE` — argv parsing (`--help`, `--version`, `--reset`, `--daily`, `--preview`) and the help text; these short-circuit before any credential or network work. |
 | `lib/github.js` | `createGithub` — GitHub REST client: `getUser` (profile name, email, account creation year), `ensurePrivateRepo` (creates the private `daily-log` repo if missing), `remoteUrl` (HTTPS remote embedding the token). |
 | `lib/planner.js` | `generatePlan` (multi-year backfill plan), `generateDailyPlan` (single-day plan), and the realism engine behind both. |
 | `lib/applier.js` | `applyPlan` — work-dir git repo management, activity log, backdated commits, reconcile, resume bookkeeping. |
@@ -19,7 +20,8 @@ Three modes, selected in `index.js`:
 
 - `greendrip` — interactive backfill: config prompt → account lookup → start-year prompt → plan generation → preview → apply.
 - `greendrip --preview` — generate and print the plan, write `plan.json`, never touch git (`PREVIEW_ONLY`, `index.js`).
-- `greendrip --daily` — headless daily mode (`DAILY_ONLY`, `index.js`); reads credentials from env or falls back to `.gogreen.json`, then delegates to `lib/daily.js`.
+- `greendrip --daily` — headless daily mode (`index.js`); reads credentials from env or falls back to `.gogreen.json`, then delegates to `lib/daily.js`. A rejected token exits with reconfigure guidance (`npx greendrip --reset`).
+- `greendrip --reset` — deletes `.gogreen.json` so credentials can be re-entered; `--help` / `--version` exit before any config or network work.
 
 ## Data flow
 

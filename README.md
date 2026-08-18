@@ -108,7 +108,14 @@ A realism engine (`lib/planner.js`) generates the plan; an applier (`lib/applier
 npm test
 ```
 
-38 tests covering plan realism, determinism, resume safety, and the reconcile logic.
+53 tests covering plan realism, determinism, resume safety, and the reconcile logic.
+
+## 🛟 Troubleshooting
+
+- **Wrong token saved?** Run `npx greendrip --reset` to clear `.gogreen.json`, then run `npx greendrip` again.
+- **401 Bad credentials?** The token was rejected — re-enter it via `npx greendrip --reset`, or set valid `GOGREEN_TOKEN` / `GOGREEN_USERNAME` env vars.
+- **`greendrip: command not found`?** A local `npm i greendrip` doesn't put the command on your PATH — use `npx greendrip` or install globally (`npm i -g greendrip`).
+- `npx greendrip --help` lists all options.
 
 ## ⚠️ Note
 
